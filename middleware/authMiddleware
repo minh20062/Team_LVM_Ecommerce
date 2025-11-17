@@ -1,0 +1,49 @@
+const jwt = require('jsonwebtoken');
+const User = require('../models/User');
+
+const protect = async (req, res, next) => {
+  let token;
+
+  // 1. Kiểm tra xem 'Authorization' header có tồn tại và bắt đầu bằng 'Bearer' không
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith('Bearer')
+  ) {
+    try {
+      // 2. Lấy token ra khỏi header (chuỗi "Bearer <token>")
+      token = req.headers.authorization.split(' ')[1];
+
+      // 3. Giải mã token (dùng 'secret' từ file .env)
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+      // 4. Lấy thông tin user (trừ mật khẩu) từ ID trong token
+      // Gắn user vào đối tượng request (req.user)
+      req.user = await User.findById(decoded.user.id).select('-password');
+
+      // 5. Cho phép đi tiếp (vào route /me)
+      next();
+    } catch (error) {
+      // Bắt lỗi (ví dụ: token không hợp lệ, token hết hạn)
+      console.error(error);
+      return res.status(401).json({ message: 'Không được phép, token thất bại' });
+    }
+  }
+
+  // Nếu KHÔNG CÓ token hoặc KHÔNG có 'Bearer'
+  if (!token) {
+    return res.status(401).json({ message: 'Không được phép, không có token' });
+  }
+};
+
+// middleware phần quyền admin
+const isAdmin = (req, res, next) => {
+  // Middleware này PHẢI chạy SAU middleware 'protect'
+  if (req.user && req.user.role === 'admin') {
+    next(); // Nếu là admin, cho đi tiếp
+  } else {
+    // Nếu không phải admin, báo lỗi
+    res.status(403).json({ message: 'Không được phép, yêu cầu quyền Admin' });
+  }
+};
+
+module.exports = { protect, isAdmin };

@@ -2,6 +2,7 @@
 const express = require('express');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
+console.log("MONGO_URI =", process.env.MONGO_URI);
 
 // 1) Load env & connect DB
 dotenv.config();

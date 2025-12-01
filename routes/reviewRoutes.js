@@ -1,4 +1,3 @@
-// routes/reviewRoutes.js
 const express = require('express');
 const Review = require('../models/Review');
 const Product = require('../models/Product');
@@ -15,7 +14,7 @@ router.post('/:productId', protect, async (req, res, next) => {
   try {
     const { rating, title, comment, media } = req.body;
 
-    // tạo hoặc fail nếu đã có (nhờ unique index)
+    // Tạo review mới (unique index trên {product, user} sẽ ngăn trùng lặp)
     const review = await Review.create({
       product: req.params.productId,
       user: req.user._id,
@@ -25,7 +24,7 @@ router.post('/:productId', protect, async (req, res, next) => {
       media
     });
 
-    // cập nhật tổng hợp rating/numReviews trên Product
+    // Sau khi tạo review, cập nhật lại rating trung bình và số lượng review của Product
     const agg = await Review.aggregate([
       { $match: { product: review.product } },
       { $group: { _id: '$product', avg: { $avg: '$rating' }, count: { $sum: 1 } } }
@@ -38,9 +37,12 @@ router.post('/:productId', protect, async (req, res, next) => {
       });
     }
 
-    res.status(201).json(review);
+    res.status(201).json({
+      message: 'Review created successfully',
+      data: review
+    });
   } catch (err) {
-    // Duplicate review (unique index) -> 409
+    // Nếu user đã review sản phẩm này (duplicate key error từ unique index)
     if (err && err.code === 11000) {
       return res.status(409).json({ message: 'You have already reviewed this product' });
     }
@@ -56,10 +58,16 @@ router.post('/:productId', protect, async (req, res, next) => {
 router.get('/:productId', async (req, res, next) => {
   try {
     const items = await Review.find({ product: req.params.productId })
-      .populate('user', 'name email')
-      .sort('-createdAt');
-    res.json(items);
-  } catch (err) { next(err); }
+      .populate('user', 'name email') // lấy thông tin cơ bản của user
+      .sort('-createdAt');            // sắp xếp mới nhất trước
+
+    res.status(200).json({
+      message: 'Fetched reviews successfully',
+      data: items
+    });
+  } catch (err) {
+    next(err);
+  }
 });
 
 module.exports = router;

@@ -1,0 +1,5 @@
+# Thư mục chứa các thư viện (rất nặng)
+node_modules/
+
+# File chứa chìa khóa bí mật
+.env

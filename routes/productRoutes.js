@@ -1,16 +1,17 @@
 // routes/productRoutes.js
 const express = require('express');
 const Product = require('../models/Product');
-const { protect /*, admin*/ } = require('../middleware/authMiddleware');
+const { protect, admin } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
 /**
  * @desc   Create product
  * @route  POST /api/v1/products
- * @access Private (require token) - thường dành cho admin
+ * @access Private (require token + admin role)
  */
-router.post('/', protect, /*admin,*/ async (req, res, next) => {
+// ĐÃ SỬA: Thêm middleware admin vào đây
+router.post('/', protect, admin, async (req, res, next) => {
   try {
     const p = await Product.create(req.body);
     res.status(201).json(p);
@@ -21,7 +22,6 @@ router.post('/', protect, /*admin,*/ async (req, res, next) => {
  * @desc   Get products (list) + filter/sort/paginate
  * @route  GET /api/v1/products
  * @access Public
- * Query: keyword, category, minPrice, maxPrice, sort, page, limit
  */
 router.get('/', async (req, res, next) => {
   try {
@@ -77,9 +77,10 @@ router.get('/:id', async (req, res, next) => {
 /**
  * @desc   Update product
  * @route  PATCH /api/v1/products/:id
- * @access Private (token) - thường admin
+ * @access Private (require token + admin role)
  */
-router.patch('/:id', protect, /*admin,*/ async (req, res, next) => {
+// ĐÃ SỬA: Thêm middleware admin vào đây
+router.patch('/:id', protect, admin, async (req, res, next) => {
   try {
     const p = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!p) return res.status(404).json({ message: 'Product not found' });
@@ -90,9 +91,10 @@ router.patch('/:id', protect, /*admin,*/ async (req, res, next) => {
 /**
  * @desc   Delete product
  * @route  DELETE /api/v1/products/:id
- * @access Private (token) - thường admin
+ * @access Private (require token + admin role)
  */
-router.delete('/:id', protect, /*admin,*/ async (req, res, next) => {
+// ĐÃ SỬA: Thêm middleware admin vào đây
+router.delete('/:id', protect, admin, async (req, res, next) => {
   try {
     const p = await Product.findByIdAndDelete(req.params.id);
     if (!p) return res.status(404).json({ message: 'Product not found' });
